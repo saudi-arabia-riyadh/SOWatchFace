@@ -5,6 +5,11 @@ Simple watch face with Stack Overflow design
 Made for the https://meta.stackexchange.com/questions/318910/time-for-some-more-swag competition
 for fun and is NOT owned by, operated by, endorsed by, or in any way part of Stack Exchange Inc.
 
+## Download
+
+- Play store link: https://play.google.com/store/apps/details?id=hu.sztupy.sowatchface
+- Releases: https://github.com/sztupy/SOWatchFace/releases
+
 ## Features
 
 - Stack Overflow logo as a background
