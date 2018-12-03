@@ -2,6 +2,8 @@
 
 Simple watch face with Stack Overflow design
 
+![Watch face](https://i.stack.imgur.com/WWPoE.jpg)
+
 Made for the https://meta.stackexchange.com/questions/318910/time-for-some-more-swag competition
 for fun and is NOT owned by, operated by, endorsed by, or in any way part of Stack Exchange Inc.
 
@@ -9,6 +11,7 @@ for fun and is NOT owned by, operated by, endorsed by, or in any way part of Sta
 
 - Play store link: https://play.google.com/store/apps/details?id=hu.sztupy.sowatchface
 - Releases: https://github.com/sztupy/SOWatchFace/releases
+- Demo video: https://www.youtube.com/watch?v=CE6vfTnr41g
 
 ## Features
 
