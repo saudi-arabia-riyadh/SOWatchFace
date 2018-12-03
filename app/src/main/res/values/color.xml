@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <!-- Copyright (C) 2017 The Android Open Source Project
 
  Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,4 +13,9 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -->
-<wallpaper xmlns:android="http://schemas.android.com/apk/res/android" />
+<resources>
+    <color name="config_activity_background">#ffffff</color>
+    <color name="config_activity_header_text_color">#959595</color>
+    <color name="color_item_label_color">#000000</color>
+    <color name="color_item_circle_border_color">#424242</color>
+</resources>

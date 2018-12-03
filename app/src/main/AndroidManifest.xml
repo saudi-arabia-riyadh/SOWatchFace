@@ -18,8 +18,20 @@
             android:name="com.google.android.wearable.standalone"
             android:value="true" />
 
+        <activity android:name="android.support.wearable.complications.ComplicationHelperActivity" />
+        <activity
+            android:name=".config.AnalogComplicationConfigActivity"
+            android:label="@string/analog_complication_config">
+            <intent-filter>
+                <action android:name="hu.sztupy.sowatchface.watchface.CONFIG_COMPLICATION_SIMPLE" />
+
+                <category android:name="com.google.android.wearable.watchface.category.WEARABLE_CONFIGURATION" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
         <service
-            android:name=".SOWatchFace"
+            android:name=".watchface.SOWatchFace"
             android:label="@string/my_analog_name"
             android:permission="android.permission.BIND_WALLPAPER">
             <meta-data
@@ -31,6 +43,9 @@
             <meta-data
                 android:name="com.google.android.wearable.watchface.preview_circular"
                 android:resource="@drawable/preview_analog" />
+            <meta-data
+                android:name="com.google.android.wearable.watchface.wearableConfigurationAction"
+                android:value="hu.sztupy.sowatchface.watchface.CONFIG_COMPLICATION_SIMPLE" />
 
             <intent-filter>
                 <action android:name="android.service.wallpaper.WallpaperService" />
