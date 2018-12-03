@@ -15,8 +15,9 @@ for fun and is NOT owned by, operated by, endorsed by, or in any way part of Sta
 
 ## Features
 
-- Stack Overflow logo as a background
+- Looks a bit like the swag that you can win with the SO logo
 - Displays the UTC offset so you know when the Stack Overflow counters reset
+- Water Resistant to 6-8 weeks
 
 ## License
 
