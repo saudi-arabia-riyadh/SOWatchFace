@@ -4,7 +4,7 @@ Simple watch face with Stack Overflow design
 
 ![Watch face](https://i.stack.imgur.com/WWPoE.jpg)
 
-Made for the https://meta.stackexchange.com/questions/318910/time-for-some-more-swag competition
+Made for the https://meta.stackexchange.com/a/319326/133343 competition
 for fun and is NOT owned by, operated by, endorsed by, or in any way part of Stack Exchange Inc.
 
 ## Download
