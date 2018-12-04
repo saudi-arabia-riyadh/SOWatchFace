@@ -15,8 +15,10 @@ for fun and is NOT owned by, operated by, endorsed by, or in any way part of Sta
 
 ## Features
 
-- Looks a bit like the swag that you can win with the SO logo
-- Displays the UTC offset so you know when the Stack Overflow counters reset
+- Two watch faces, a simple one, and another that looks like the SWAG you can win.
+- Supports two complications on the watch face.
+- Includes a complication that can show a specific user's reputation. Works on other watch faces that support complications as well. 
+- Displays the UTC offset so you know when the Stack Overflow counters reset.
 - Water Resistant to 6-8 weeks
 
 ## License
