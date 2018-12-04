@@ -18,8 +18,8 @@ package hu.sztupy.sowatchface.provider;
 
 import android.app.PendingIntent;
 import android.content.ComponentName;
+import android.content.Context;
 import android.content.SharedPreferences;
-import android.graphics.BitmapFactory;
 import android.graphics.drawable.Icon;
 import android.support.wearable.complications.ComplicationData;
 import android.support.wearable.complications.ComplicationManager;
@@ -27,9 +27,20 @@ import android.support.wearable.complications.ComplicationProviderService;
 import android.support.wearable.complications.ComplicationText;
 import android.util.Log;
 
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.Volley;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.util.Locale;
 
 import hu.sztupy.sowatchface.R;
+import hu.sztupy.sowatchface.config.AnalogComplicationConfigRecyclerViewAdapter;
 
 /**
  * Example Watch Face Complication data provider provides a number that can be incremented on tap.
@@ -37,6 +48,41 @@ import hu.sztupy.sowatchface.R;
 public class StackOverflowReputationProviderService extends ComplicationProviderService {
 
     private static final String TAG = "SORepProviderService";
+    static final String SO_ACCESS_KEY = "DHARdYfewh89v8Af)V194A((";
+
+    static final String COMPLICATION_PROVIDER_PREFERENCES_FILE_KEY =
+            "hu.sztupy.sowatchface.watchface.COMPLICATION_PROVIDER_PREFERENCES_FILE_KEY";
+
+    private static final int[] REPUTATION_MILESTONES = {
+            1,
+            5,
+            10,
+            15,
+            20,
+            50,
+            75,
+            100,
+            125,
+            200,
+            250,
+            500,
+            1000,
+            1500,
+            2000,
+            2500,
+            3000,
+            5000,
+            10000,
+            15000,
+            20000,
+            25000, // last real milestone, after this they are just numbers
+            100000,
+            250000,
+            500000,
+            1000000,
+            2500000,
+            5000000
+    };
 
     /*
      * Called when a complication has been activated. The method is for any one-time
@@ -63,77 +109,131 @@ public class StackOverflowReputationProviderService extends ComplicationProvider
      */
     @Override
     public void onComplicationUpdate(
-            int complicationId, int dataType, ComplicationManager complicationManager) {
+            final int complicationId, final int dataType, final ComplicationManager complicationManager) {
         Log.d(TAG, "onComplicationUpdate() id: " + complicationId);
 
-        // Create Tap Action so that the user can trigger an update by tapping the complication.
-        ComponentName thisProvider = new ComponentName(this, getClass());
-        // We pass the complication id, so we can only update the specific complication tapped.
-        PendingIntent complicationTogglePendingIntent =
+        final ComponentName thisProvider = new ComponentName(this, getClass());
+        final PendingIntent complicationTogglePendingIntent =
                 StackOverflowReputationDataReceiver.getToggleIntent(this, thisProvider, complicationId);
 
-        // Retrieves your data, in this case, we grab an incrementing number from SharedPrefs.
-        SharedPreferences preferences =
-                getSharedPreferences(
-                        StackOverflowReputationDataReceiver.COMPLICATION_PROVIDER_PREFERENCES_FILE_KEY, 0);
-        int number =
-                preferences.getInt(
-                        StackOverflowReputationDataReceiver.getPreferenceKey(thisProvider, complicationId),
-                        0);
-        String numberText = String.format(Locale.getDefault(), "%d", number);
+        getLatestData(getApplicationContext(), thisProvider, complicationId, new Runnable() {
+                    @Override
+                    public void run() {
 
-        ComplicationData complicationData = null;
+                        SharedPreferences preferences = getSharedPreferences(COMPLICATION_PROVIDER_PREFERENCES_FILE_KEY, 0);
+                        int number = preferences.getInt(getPreferenceKey(thisProvider, complicationId), 0);
+                        String numberText = String.format(Locale.getDefault(), "%d", number);
 
-        Icon icon = Icon.createWithResource(getApplicationContext(), R.drawable.stack_overflow_icon);
+                        int nextReputationMilestone = 0;
+                        for (int milestone : REPUTATION_MILESTONES) {
+                            if (milestone > number) {
+                                nextReputationMilestone = milestone;
+                                break;
+                            }
+                        }
 
-        switch (dataType) {
-            case ComplicationData.TYPE_RANGED_VALUE:
-                complicationData =
-                        new ComplicationData.Builder(ComplicationData.TYPE_RANGED_VALUE)
-                                .setValue(number)
-                                .setMinValue(0)
-                                .setMaxValue(StackOverflowReputationDataReceiver.MAX_REPUTATION)
-                                .setShortText(ComplicationText.plainText(numberText))
-                                .setTapAction(complicationTogglePendingIntent)
-                                .setIcon(icon)
-                                .build();
-                break;
-            case ComplicationData.TYPE_SHORT_TEXT:
-                complicationData =
-                        new ComplicationData.Builder(ComplicationData.TYPE_SHORT_TEXT)
-                                .setShortText(ComplicationText.plainText(numberText))
-                                .setTapAction(complicationTogglePendingIntent)
-                                .setIcon(icon)
-                                .build();
-                break;
-            case ComplicationData.TYPE_LONG_TEXT:
-                complicationData =
-                        new ComplicationData.Builder(ComplicationData.TYPE_LONG_TEXT)
-                                .setLongText(ComplicationText.plainText("Reputation: " + numberText))
-                                .setTapAction(complicationTogglePendingIntent)
-                                .setIcon(icon)
-                                .build();
-                break;
-            case ComplicationData.TYPE_ICON:
-                complicationData =
-                        new ComplicationData.Builder(ComplicationData.TYPE_ICON)
-                                .setTapAction(complicationTogglePendingIntent)
-                                .setIcon(icon)
-                                .build();
-            default:
-                if (Log.isLoggable(TAG, Log.WARN)) {
-                    Log.w(TAG, "Unexpected complication type " + dataType);
+                        ComplicationData complicationData = null;
+
+                        Icon icon = Icon.createWithResource(getApplicationContext(), R.drawable.stack_overflow_icon);
+
+                        switch (dataType) {
+                            case ComplicationData.TYPE_RANGED_VALUE:
+                                complicationData =
+                                        new ComplicationData.Builder(ComplicationData.TYPE_RANGED_VALUE)
+                                                .setValue(number)
+                                                .setMinValue(0)
+                                                .setMaxValue(nextReputationMilestone)
+                                                .setShortText(ComplicationText.plainText(numberText))
+                                                .setTapAction(complicationTogglePendingIntent)
+                                                .setIcon(icon)
+                                                .build();
+                                break;
+                            case ComplicationData.TYPE_SHORT_TEXT:
+                                complicationData =
+                                        new ComplicationData.Builder(ComplicationData.TYPE_SHORT_TEXT)
+                                                .setShortText(ComplicationText.plainText(numberText))
+                                                .setTapAction(complicationTogglePendingIntent)
+                                                .setIcon(icon)
+                                                .build();
+                                break;
+                            case ComplicationData.TYPE_LONG_TEXT:
+                                complicationData =
+                                        new ComplicationData.Builder(ComplicationData.TYPE_LONG_TEXT)
+                                                .setLongText(ComplicationText.plainText("Reputation: " + numberText))
+                                                .setTapAction(complicationTogglePendingIntent)
+                                                .setIcon(icon)
+                                                .build();
+                                break;
+                            case ComplicationData.TYPE_ICON:
+                                complicationData =
+                                        new ComplicationData.Builder(ComplicationData.TYPE_ICON)
+                                                .setTapAction(complicationTogglePendingIntent)
+                                                .setIcon(icon)
+                                                .build();
+                            default:
+                                if (Log.isLoggable(TAG, Log.WARN)) {
+                                    Log.w(TAG, "Unexpected complication type " + dataType);
+                                }
+                        }
+
+                        if (complicationData != null) {
+                            complicationManager.updateComplicationData(complicationId, complicationData);
+
+                        } else {
+                            // If no data is sent, we still need to inform the ComplicationManager, so the update
+                            // job can finish and the wake lock isn't held any longer than necessary.
+                            complicationManager.noUpdateRequired(complicationId);
+                        }
+                    }
                 }
-        }
+        );
+    }
 
-        if (complicationData != null) {
-            complicationManager.updateComplicationData(complicationId, complicationData);
+    public void getLatestData(final Context context, final ComponentName provider, final int complicationId, final Runnable callback) {
+        SharedPreferences applicationPreferences =
+                context.getSharedPreferences(
+                        context.getString(R.string.analog_complication_preference_file_key),
+                        Context.MODE_PRIVATE);
 
-        } else {
-            // If no data is sent, we still need to inform the ComplicationManager, so the update
-            // job can finish and the wake lock isn't held any longer than necessary.
-            complicationManager.noUpdateRequired(complicationId);
-        }
+        int userId = applicationPreferences.getInt(context.getString(R.string.saved_user_id_pref), AnalogComplicationConfigRecyclerViewAdapter.JON_SKEET_ID);
+
+        RequestQueue queue = Volley.newRequestQueue(context);
+        String url = "https://api.stackexchange.com/2.2/users/" + userId + "?site=stackoverflow&key=" + SO_ACCESS_KEY;
+
+        JsonObjectRequest jsonRequest = new JsonObjectRequest(Request.Method.GET, url,
+                null,
+                new Response.Listener<JSONObject>() {
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        int result = 0;
+
+                        try {
+                            result = response.getJSONArray("items").getJSONObject(0).getInt("reputation");
+                        } catch (JSONException e) {
+                        }
+
+                        Log.d(TAG, "Response is: " + result);
+
+                        String preferenceKey = getPreferenceKey(provider, complicationId);
+                        SharedPreferences sharedPreferences =
+                                context.getSharedPreferences(COMPLICATION_PROVIDER_PREFERENCES_FILE_KEY, 0);
+
+                        SharedPreferences.Editor editor = sharedPreferences.edit();
+                        editor.putInt(preferenceKey, result);
+                        editor.apply();
+
+                        callback.run();
+                    }
+                }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                Log.i(TAG, "Access to StackOverflow API has failed", error);
+                Log.i(TAG, error.toString());
+                callback.run();
+            }
+        });
+
+        queue.add(jsonRequest);
     }
 
     /*
@@ -142,5 +242,14 @@ public class StackOverflowReputationProviderService extends ComplicationProvider
     @Override
     public void onComplicationDeactivated(int complicationId) {
         Log.d(TAG, "onComplicationDeactivated(): " + complicationId);
+    }
+
+
+    /**
+     * Returns the key for the shared preference used to hold the current state of a given
+     * complication.
+     */
+    static String getPreferenceKey(ComponentName provider, int complicationId) {
+        return provider.getClassName() + complicationId;
     }
 }
