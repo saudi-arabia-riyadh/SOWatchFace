@@ -27,19 +27,24 @@ import android.support.wearable.complications.ComplicationHelperActivity;
 import android.support.wearable.complications.ComplicationProviderInfo;
 import android.support.wearable.complications.ProviderInfoRetriever;
 import android.support.wearable.complications.ProviderInfoRetriever.OnProviderInfoReceivedCallback;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
+import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.Switch;
+import android.widget.TextView;
 
 import hu.sztupy.sowatchface.R;
 import hu.sztupy.sowatchface.model.AnalogComplicationConfigData.ConfigItemType;
 import hu.sztupy.sowatchface.model.AnalogComplicationConfigData.PreviewAndComplicationsConfigItem;
 import hu.sztupy.sowatchface.model.AnalogComplicationConfigData.SwitchConfigItem;
+import hu.sztupy.sowatchface.model.AnalogComplicationConfigData.InputConfigItem;
 import hu.sztupy.sowatchface.watchface.SOWatchFace;
 
 import java.util.ArrayList;
@@ -69,6 +74,8 @@ public class AnalogComplicationConfigRecyclerViewAdapter
 
     private static final String TAG = "CompConfigAdapter";
 
+    public static final int JON_SKEET_ID = 22656;
+
     /**
      * Used by associated watch face ({@link SOWatchFace}) to let this
      * adapter know which complication locations are supported, their ids, and supported
@@ -84,6 +91,7 @@ public class AnalogComplicationConfigRecyclerViewAdapter
 
     public static final int TYPE_PREVIEW_AND_COMPLICATIONS_CONFIG = 0;
     public static final int TYPE_SWITCH_CONFIG = 1;
+    public static final int TYPE_INPUT_CONFIG = 2;
 
     // ComponentName associated with watch face service (service that renders watch face). Used
     // to retrieve complication information.
@@ -165,6 +173,16 @@ public class AnalogComplicationConfigRecyclerViewAdapter
                                                 parent,
                                                 false));
                 break;
+
+            case TYPE_INPUT_CONFIG:
+                viewHolder =
+                        new InputViewHolder(
+                                LayoutInflater.from(parent.getContext())
+                                        .inflate(
+                                                R.layout.config_input,
+                                                parent,
+                                                false));
+                break;
         }
 
         return viewHolder;
@@ -210,6 +228,22 @@ public class AnalogComplicationConfigRecyclerViewAdapter
                         unreadEnabledIconResourceId, unreadDisabledIconResourceId);
                 unreadViewHolder.setName(unreadName);
                 unreadViewHolder.setSharedPrefId(unreadSharedPrefId);
+                break;
+
+            case TYPE_INPUT_CONFIG:
+                InputViewHolder inputViewHolder =
+                        (InputViewHolder) viewHolder;
+
+                InputConfigItem inputConfigItem =
+                        (InputConfigItem) configItemType;
+
+                int iconId = inputConfigItem.getIconResourceId();
+                int inputSharedPrefId = inputConfigItem.getSharedPrefId();
+                String inputName = inputConfigItem.getName();
+
+                inputViewHolder.setName(inputName);
+                inputViewHolder.setIcon(iconId);
+                inputViewHolder.setSharedPrefId(inputSharedPrefId);
                 break;
         }
     }
@@ -469,6 +503,94 @@ public class AnalogComplicationConfigRecyclerViewAdapter
             editor.apply();
 
             updateIcon(context, newState);
+        }
+    }
+
+    /**
+     * Displays switch with icon the user can toggle on and off.
+     */
+    public class InputViewHolder extends RecyclerView.ViewHolder implements TextWatcher, OnClickListener {
+
+        private EditText mInput;
+        private TextView mLabel;
+        private View mView;
+
+        private int mIconResourceId;
+
+        private int mSharedPrefResourceId;
+
+        public InputViewHolder(View view) {
+            super(view);
+            mView = view;
+            mInput = (EditText) mView.findViewById(R.id.input_item_edit);
+            mLabel = (TextView) mView.findViewById(R.id.input_item_text);
+
+            mInput.addTextChangedListener(this);
+            mLabel.setOnClickListener(this);
+        }
+
+        public void setName(String name) {
+            mLabel.setText(name);
+        }
+
+        public void setIcon(int iconResourceId) {
+
+            mIconResourceId = iconResourceId;
+
+            Context context = mLabel.getContext();
+
+            // Set default to enabled.
+            mLabel.setCompoundDrawablesWithIntrinsicBounds(
+                    context.getDrawable(mIconResourceId), null, null, null);
+        }
+
+        public void setSharedPrefId(int sharedPrefId) {
+            mSharedPrefResourceId = sharedPrefId;
+
+            if (mInput != null) {
+
+                Context context = mInput.getContext();
+                String sharedPreferenceString = context.getString(mSharedPrefResourceId);
+                int currentValue = mSharedPref.getInt(sharedPreferenceString, JON_SKEET_ID);
+
+                mInput.setText(currentValue + "");
+            }
+        }
+
+        @Override
+        public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+        }
+
+        @Override
+        public void onTextChanged(CharSequence s, int start, int before, int count) {
+
+        }
+
+        @Override
+        public void afterTextChanged(Editable s) {
+            if (mInput != null) {
+                Context context = mInput.getContext();
+                String sharedPreferenceString = context.getString(mSharedPrefResourceId);
+
+                int newValue;
+                try {
+                    newValue = Integer.parseInt(s.toString());
+                } catch (NumberFormatException e) {
+                    newValue = JON_SKEET_ID;
+                }
+
+                SharedPreferences.Editor editor = mSharedPref.edit();
+                editor.putInt(sharedPreferenceString, newValue);
+                editor.apply();
+            }
+        }
+
+        @Override
+        public void onClick(View v) {
+            if (mInput!= null) {
+                mInput.requestFocus();
+            }
         }
     }
 

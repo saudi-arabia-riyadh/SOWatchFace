@@ -87,6 +87,14 @@ public class AnalogComplicationConfigData {
                         R.string.saved_design_pref);
         settingsConfigData.add(designPreferenceConfigItem);
 
+        ConfigItemType userIdSelectConfigItem =
+                new InputConfigItem(
+                        context.getString(R.string.config_user_id_label),
+                        R.drawable.baseline_trending_up_white_24,
+                        R.string.saved_user_id_pref);
+        settingsConfigData.add(userIdSelectConfigItem);
+
+
         return settingsConfigData;
     }
 
@@ -120,7 +128,6 @@ public class AnalogComplicationConfigData {
         private int iconEnabledResourceId;
         private int iconDisabledResourceId;
         private int sharedPrefId;
-        private int viewId;
 
         SwitchConfigItem(
                 String name,
@@ -152,6 +159,42 @@ public class AnalogComplicationConfigData {
         @Override
         public int getConfigType() {
             return AnalogComplicationConfigRecyclerViewAdapter.TYPE_SWITCH_CONFIG;
+        }
+    }
+
+    /**
+     * Data for Unread Notification preference picker item in RecyclerView.
+     */
+    public static class InputConfigItem  implements ConfigItemType {
+
+        private String name;
+        private int iconResourceId;
+        private int sharedPrefId;
+
+        InputConfigItem(
+                String name,
+                int iconResourceId,
+                int sharedPrefId) {
+            this.name = name;
+            this.iconResourceId = iconResourceId;
+            this.sharedPrefId = sharedPrefId;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public int getIconResourceId() {
+            return iconResourceId;
+        }
+
+        public int getSharedPrefId() {
+            return sharedPrefId;
+        }
+
+        @Override
+        public int getConfigType() {
+            return AnalogComplicationConfigRecyclerViewAdapter.TYPE_INPUT_CONFIG;
         }
     }
 }
