@@ -5,15 +5,14 @@
     android:orientation="horizontal"
     android:id="@+id/input_item">
     <TextView
-        android:id="@+id/input_item_text"
+        android:id="@+id/select_item_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         style="@style/ButtonConfigurationStyle"
-        android:labelFor="@id/input_item_edit"/>
-    <EditText
-        android:id="@+id/input_item_edit"
+        android:labelFor="@id/select_item_value"/>
+    <TextView
+        android:id="@+id/select_item_value"
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
-        android:inputType="number"
         style="@style/InputConfigurationStyle" />
 </LinearLayout>

@@ -1,6 +1,5 @@
 package hu.sztupy.sowatchface.utils;
 
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;

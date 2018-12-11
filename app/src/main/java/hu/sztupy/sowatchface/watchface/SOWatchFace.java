@@ -11,11 +11,9 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.ColorMatrix;
 import android.graphics.ColorMatrixColorFilter;
-import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.Typeface;
-import android.graphics.drawable.Icon;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -37,6 +35,8 @@ import java.util.concurrent.TimeUnit;
 import hu.sztupy.sowatchface.R;
 import hu.sztupy.sowatchface.config.AnalogComplicationConfigRecyclerViewAdapter;
 import hu.sztupy.sowatchface.utils.LogoDownloadService;
+
+import static hu.sztupy.sowatchface.config.AnalogComplicationConfigRecyclerViewAdapter.JON_SKEET_ID;
 
 /**
  * Analog watch face with a ticking second hand. In ambient mode, the second hand isn't
@@ -184,6 +184,8 @@ public class SOWatchFace extends CanvasWatchFaceService {
         private boolean mUnreadNotificationsPreference;
         private boolean mUTCNotchPreference;
         private boolean mDesignPreference;
+        private String mSiteName = "";
+        private int mUserId;
         private int mNumberOfUnreadNotifications = 0;
 
         /* Maps active complication ids to the data for that complication. Note: Data will only be
@@ -254,19 +256,43 @@ public class SOWatchFace extends CanvasWatchFaceService {
             String designPreferenceResourceName =
                     getApplicationContext().getString(R.string.saved_design_pref);
 
+            String userIdPreferenceResourceName =
+                    getApplicationContext().getString(R.string.saved_user_id_pref);
+
+            boolean oldDesignPreference = mDesignPreference;
+            String oldSiteName = mSiteName;
+            int oldUserId = mUserId;
+
             mUnreadNotificationsPreference =
                     mSharedPref.getBoolean(unreadNotificationPreferenceResourceName, true);
 
             mUTCNotchPreference =
                     mSharedPref.getBoolean(utcNotchPreferenceResourceName, true);
 
-            boolean mOldPreference = mDesignPreference;
-
             mDesignPreference =
                     mSharedPref.getBoolean(designPreferenceResourceName, true);
 
-            if (mOldPreference != mDesignPreference) {
+            mUserId =
+                    mSharedPref.getInt(userIdPreferenceResourceName, JON_SKEET_ID);
+
+            mSiteName = mLogoService.getCurrentSiteCodeName();
+
+            if (mUserId != oldUserId) {
+                setActiveComplications();
+                setActiveComplications(COMPLICATION_IDS);
+            }
+
+            if (oldDesignPreference != mDesignPreference) {
+                setActiveComplications();
                 regenerateScreenData();
+                setActiveComplications(COMPLICATION_IDS);
+            }
+
+            if (!mSiteName.equals(oldSiteName)) {
+                setActiveComplications();
+                initializeLogoDownload();
+                regenerateScreenData();
+                setActiveComplications(COMPLICATION_IDS);
             }
         }
 

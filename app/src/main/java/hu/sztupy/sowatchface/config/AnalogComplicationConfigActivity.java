@@ -1,18 +1,3 @@
-/*
- * Copyright (C) 2017 The Android Open Source Project
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package hu.sztupy.sowatchface.config;
 
 import android.app.Activity;
@@ -38,6 +23,7 @@ public class AnalogComplicationConfigActivity extends Activity {
     private static final String TAG = AnalogComplicationConfigActivity.class.getSimpleName();
 
     static final int COMPLICATION_CONFIG_REQUEST_CODE = 1001;
+    static final int SITE_SETTINGS_CONFIG_REQUEST_CODE = 1002;
 
     private WearableRecyclerView mWearableRecyclerView;
     private AnalogComplicationConfigRecyclerViewAdapter mAdapter;
@@ -83,6 +69,10 @@ public class AnalogComplicationConfigActivity extends Activity {
             // Note: complication id is saved and tracked in the adapter class.
             mAdapter.updateSelectedComplication(complicationProviderInfo);
 
+        }
+
+        if (requestCode == SITE_SETTINGS_CONFIG_REQUEST_CODE && resultCode == RESULT_OK) {
+            mAdapter.updateSiteName();
         }
     }
 }

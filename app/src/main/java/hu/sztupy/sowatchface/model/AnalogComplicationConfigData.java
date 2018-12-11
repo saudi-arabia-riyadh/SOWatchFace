@@ -1,18 +1,3 @@
-/*
- * Copyright (C) 2017 The Android Open Source Project
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package hu.sztupy.sowatchface.model;
 
 import android.content.Context;
@@ -87,13 +72,19 @@ public class AnalogComplicationConfigData {
                         R.string.saved_design_pref);
         settingsConfigData.add(designPreferenceConfigItem);
 
+        ConfigItemType siteNameConfigItem =
+                new SelectBoxConfigItem(
+                        context.getString(R.string.config_se_site_label),
+                        R.drawable.baseline_subject_white_24,
+                        R.string.saved_site_name_pref);
+        settingsConfigData.add(siteNameConfigItem);
+
         ConfigItemType userIdSelectConfigItem =
                 new InputConfigItem(
                         context.getString(R.string.config_user_id_label),
                         R.drawable.baseline_trending_up_white_24,
                         R.string.saved_user_id_pref);
         settingsConfigData.add(userIdSelectConfigItem);
-
 
         return settingsConfigData;
     }
@@ -162,9 +153,6 @@ public class AnalogComplicationConfigData {
         }
     }
 
-    /**
-     * Data for Unread Notification preference picker item in RecyclerView.
-     */
     public static class InputConfigItem  implements ConfigItemType {
 
         private String name;
@@ -195,6 +183,39 @@ public class AnalogComplicationConfigData {
         @Override
         public int getConfigType() {
             return AnalogComplicationConfigRecyclerViewAdapter.TYPE_INPUT_CONFIG;
+        }
+    }
+
+    public static class SelectBoxConfigItem implements ConfigItemType {
+
+        private String name;
+        private int iconResourceId;
+        private int sharedPrefId;
+
+        SelectBoxConfigItem(
+                String name,
+                int iconResourceId,
+                int sharedPrefId) {
+            this.name = name;
+            this.iconResourceId = iconResourceId;
+            this.sharedPrefId = sharedPrefId;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public int getIconResourceId() {
+            return iconResourceId;
+        }
+
+        public int getSharedPrefId() {
+            return sharedPrefId;
+        }
+
+        @Override
+        public int getConfigType() {
+            return AnalogComplicationConfigRecyclerViewAdapter.TYPE_SELECTBOX_CONFIG;
         }
     }
 }

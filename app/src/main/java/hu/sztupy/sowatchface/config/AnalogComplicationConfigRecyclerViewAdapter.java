@@ -1,24 +1,9 @@
-/*
- * Copyright (C) 2017 The Android Open Source Project
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package hu.sztupy.sowatchface.config;
 
 import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.drawable.Drawable;
 import android.support.annotation.Nullable;
@@ -45,10 +30,13 @@ import hu.sztupy.sowatchface.model.AnalogComplicationConfigData.ConfigItemType;
 import hu.sztupy.sowatchface.model.AnalogComplicationConfigData.PreviewAndComplicationsConfigItem;
 import hu.sztupy.sowatchface.model.AnalogComplicationConfigData.SwitchConfigItem;
 import hu.sztupy.sowatchface.model.AnalogComplicationConfigData.InputConfigItem;
+import hu.sztupy.sowatchface.model.AnalogComplicationConfigData.SelectBoxConfigItem;
 import hu.sztupy.sowatchface.watchface.SOWatchFace;
 
 import java.util.ArrayList;
 import java.util.concurrent.Executors;
+
+import static hu.sztupy.sowatchface.config.SiteSelectorActivity.EXTRA_SHARED_PREF;
 
 /**
  * Displays different layouts for configuring watch face's complications and appearance settings
@@ -93,12 +81,16 @@ public class AnalogComplicationConfigRecyclerViewAdapter
     public static final int TYPE_PREVIEW_AND_COMPLICATIONS_CONFIG = 0;
     public static final int TYPE_SWITCH_CONFIG = 1;
     public static final int TYPE_INPUT_CONFIG = 2;
+    public static final int TYPE_SELECTBOX_CONFIG = 3;
+
+    static final int UPDATE_SITE_SETTINGS_CODE = 1002;
 
     // ComponentName associated with watch face service (service that renders watch face). Used
     // to retrieve complication information.
     private ComponentName mWatchFaceComponentName;
 
     private ArrayList<ConfigItemType> mSettingsDataSet;
+    private ArrayList<SelectBoxViewHolder> mSelectBoxViewHolders;
 
     private Context mContext;
 
@@ -138,6 +130,8 @@ public class AnalogComplicationConfigRecyclerViewAdapter
                 context.getSharedPreferences(
                         context.getString(R.string.analog_complication_preference_file_key),
                         Context.MODE_PRIVATE);
+
+        mSelectBoxViewHolders = new ArrayList<>();
 
         // Initialization of code to retrieve active complication data for the watch face.
         mProviderInfoRetriever =
@@ -181,6 +175,15 @@ public class AnalogComplicationConfigRecyclerViewAdapter
                                 LayoutInflater.from(parent.getContext())
                                         .inflate(
                                                 R.layout.config_input,
+                                                parent,
+                                                false));
+                break;
+            case TYPE_SELECTBOX_CONFIG:
+                viewHolder =
+                        new SelectBoxViewHolder(
+                                LayoutInflater.from(parent.getContext())
+                                        .inflate(
+                                                R.layout.config_selectbox,
                                                 parent,
                                                 false));
                 break;
@@ -246,6 +249,24 @@ public class AnalogComplicationConfigRecyclerViewAdapter
                 inputViewHolder.setIcon(iconId);
                 inputViewHolder.setSharedPrefId(inputSharedPrefId);
                 break;
+            case TYPE_SELECTBOX_CONFIG:
+                SelectBoxViewHolder selectBoxViewHolder =
+                        (SelectBoxViewHolder) viewHolder;
+
+                SelectBoxConfigItem selectBoxConfigItem =
+                        (SelectBoxConfigItem) configItemType;
+
+                int sbIconId = selectBoxConfigItem.getIconResourceId();
+                int selectBoxSharedPrefId = selectBoxConfigItem.getSharedPrefId();
+                String selectBoxName = selectBoxConfigItem.getName();
+
+                selectBoxViewHolder.setName(selectBoxName);
+                selectBoxViewHolder.setIcon(sbIconId);
+                selectBoxViewHolder.setSharedPrefId(selectBoxSharedPrefId);
+                selectBoxViewHolder.setLaunchActivity(SiteSelectorActivity.class);
+
+                mSelectBoxViewHolders.add(selectBoxViewHolder);
+                break;
         }
     }
 
@@ -269,6 +290,12 @@ public class AnalogComplicationConfigRecyclerViewAdapter
         if (mPreviewAndComplicationsViewHolder != null && mSelectedComplicationId >= 0) {
             mPreviewAndComplicationsViewHolder.updateComplicationViews(
                     mSelectedComplicationId, complicationProviderInfo);
+        }
+    }
+
+    public void updateSiteName() {
+        for (SelectBoxViewHolder viewHolder : mSelectBoxViewHolders) {
+            viewHolder.updatePreference();
         }
     }
 
@@ -591,6 +618,87 @@ public class AnalogComplicationConfigRecyclerViewAdapter
         public void onClick(View v) {
             if (mInput!= null) {
                 mInput.requestFocus();
+            }
+        }
+    }
+
+
+    /**
+     * Displays switch with icon the user can toggle on and off.
+     */
+    public class SelectBoxViewHolder extends RecyclerView.ViewHolder implements OnClickListener {
+
+        private TextView mValue;
+        private TextView mLabel;
+        private View mView;
+
+        private int mIconResourceId;
+
+        private int mSharedPrefResourceId;
+
+        private Class<SiteSelectorActivity> mLaunchActivity;
+
+
+        public SelectBoxViewHolder(View view) {
+            super(view);
+            mView = view;
+
+            mValue = (TextView) mView.findViewById(R.id.select_item_value);
+            mLabel = (TextView) mView.findViewById(R.id.select_item_text);
+
+            mView.setOnClickListener(this);
+            mValue.setOnClickListener(this);
+            mLabel.setOnClickListener(this);
+        }
+
+        public void setLaunchActivity(Class<SiteSelectorActivity> activity) {
+            mLaunchActivity = activity;
+        }
+
+        public void setName(String name) {
+            mLabel.setText(name);
+        }
+
+        public void setIcon(int iconResourceId) {
+            mIconResourceId = iconResourceId;
+
+            Context context = mLabel.getContext();
+
+            // Set default to enabled.
+            mLabel.setCompoundDrawablesWithIntrinsicBounds(
+                    context.getDrawable(mIconResourceId), null, null, null);
+        }
+
+
+        public void setSharedPrefId(int sharedPrefId) {
+            mSharedPrefResourceId = sharedPrefId;
+
+            updatePreference();
+        }
+
+        public void updatePreference() {
+            if (mValue != null) {
+
+                Context context = mValue.getContext();
+                String sharedPreferenceString = context.getString(mSharedPrefResourceId);
+                String currentValue = mSharedPref.getString(sharedPreferenceString, STACKOVERFLOW_NAME);
+
+                mValue.setText(currentValue);
+            }
+        }
+
+        @Override
+        public void onClick(View v) {
+            if (mLaunchActivity != null) {
+                Intent launchIntent = new Intent(mView.getContext(), mLaunchActivity);
+
+                // Pass shared preference name to save color value to.
+                launchIntent.putExtra(EXTRA_SHARED_PREF, mSharedPrefResourceId);
+
+                Activity activity = (Activity) mView.getContext();
+                activity.startActivityForResult(
+                        launchIntent,
+                        AnalogComplicationConfigActivity.SITE_SETTINGS_CONFIG_REQUEST_CODE);
             }
         }
     }
