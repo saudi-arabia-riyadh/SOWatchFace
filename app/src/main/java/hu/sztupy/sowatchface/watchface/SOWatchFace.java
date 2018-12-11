@@ -401,7 +401,7 @@ public class SOWatchFace extends CanvasWatchFaceService {
                 } else {
                     // for the simple watch we just draw the logo dimmed
                     Paint alphaPaint = new Paint();
-                    alphaPaint.setAlpha(96);
+                    alphaPaint.setAlpha(110);
 
                     Bitmap largeLogo = LogoDownloadService.resizeLogo(icon, 150, 150);
                     Canvas canvas = new Canvas(mBackgroundBitmap);

@@ -85,6 +85,13 @@ public class SiteListService {
             for (String s : siteFullName.split("[ .]")) {
                 initials.append(s.charAt(0));
             }
+            if (initials.length() == 1 && siteFullName.length() >= 3) {
+                initials = new StringBuilder();
+                initials.append(siteFullName.subSequence(0, 3));
+            }
+            if (initials.length()>4) {
+                initials.setLength(4);
+            }
             return initials.toString();
         }
         return null;
@@ -97,6 +104,16 @@ public class SiteListService {
             }
         }
         return null;
+    }
+
+    public int getPosition(String siteCode) {
+        List<SiteConfigItem> siteList = getSiteList();
+        for (int i = 0; i < siteList.size(); i++) {
+            if (siteList.get(i).getCode().equals(siteCode)) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     static public class SiteConfigItem {

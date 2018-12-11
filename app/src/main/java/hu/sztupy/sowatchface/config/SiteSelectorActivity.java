@@ -2,6 +2,7 @@ package hu.sztupy.sowatchface.config;
 
 import android.app.Activity;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.wear.widget.WearableRecyclerView;
 import android.text.Html;
@@ -14,6 +15,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 
 import hu.sztupy.sowatchface.R;
+import hu.sztupy.sowatchface.utils.LogoDownloadService;
 import hu.sztupy.sowatchface.utils.SiteListService;
 
 import static android.text.Html.FROM_HTML_MODE_COMPACT;
@@ -35,6 +37,8 @@ public class SiteSelectorActivity extends Activity {
 
     private SiteSelectorRecyclerViewAdapter mSiteSelectorRecyclerViewAdapter;
 
+    private LinearLayoutManager mLinearLayoutManager;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -47,7 +51,8 @@ public class SiteSelectorActivity extends Activity {
            sharedPrefString = getApplicationContext().getResources().getString(sharedPrefId);
         }
 
-        SiteListService siteListService = new SiteListService(getApplicationContext());
+        final SiteListService siteListService = new SiteListService(getApplicationContext());
+        final LogoDownloadService logoDownloadService = new LogoDownloadService(getApplicationContext());
 
         mSiteSelectorRecyclerViewAdapter = new SiteSelectorRecyclerViewAdapter(
                 sharedPrefString,
@@ -59,14 +64,24 @@ public class SiteSelectorActivity extends Activity {
         // Aligns the first and last items on the list vertically centered on the screen.
         mConfigAppearanceWearableRecyclerView.setEdgeItemsCenteringEnabled(true);
 
-        mConfigAppearanceWearableRecyclerView.setLayoutManager(new LinearLayoutManager(this));
+        mLinearLayoutManager = new LinearLayoutManager(this);
+
+        mConfigAppearanceWearableRecyclerView.setLayoutManager(mLinearLayoutManager);
 
         // Improves performance because we know changes in content do not change the layout size of
         // the RecyclerView.
         mConfigAppearanceWearableRecyclerView.setHasFixedSize(true);
 
         mConfigAppearanceWearableRecyclerView.setAdapter(mSiteSelectorRecyclerViewAdapter);
+
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                int position = siteListService.getPosition(logoDownloadService.getCurrentSiteCodeName());
+                if (position >= 0) {
+                    mConfigAppearanceWearableRecyclerView.scrollToPosition(position);
+                }
+            }
+        }, 250);
     }
-
-
 }
