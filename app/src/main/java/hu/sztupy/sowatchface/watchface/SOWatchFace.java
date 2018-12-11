@@ -35,8 +35,10 @@ import java.util.concurrent.TimeUnit;
 import hu.sztupy.sowatchface.R;
 import hu.sztupy.sowatchface.config.AnalogComplicationConfigRecyclerViewAdapter;
 import hu.sztupy.sowatchface.utils.LogoDownloadService;
+import hu.sztupy.sowatchface.utils.SiteListService;
 
 import static hu.sztupy.sowatchface.config.AnalogComplicationConfigRecyclerViewAdapter.JON_SKEET_ID;
+import static hu.sztupy.sowatchface.config.AnalogComplicationConfigRecyclerViewAdapter.JON_SKEET_SE_ID;
 
 /**
  * Analog watch face with a ticking second hand. In ambient mode, the second hand isn't
@@ -186,6 +188,7 @@ public class SOWatchFace extends CanvasWatchFaceService {
         private boolean mDesignPreference;
         private String mSiteName = "";
         private int mUserId;
+        private int mSEUserId;
         private int mNumberOfUnreadNotifications = 0;
 
         /* Maps active complication ids to the data for that complication. Note: Data will only be
@@ -203,6 +206,7 @@ public class SOWatchFace extends CanvasWatchFaceService {
         private boolean mBurnInProtection;
 
         private LogoDownloadService mLogoService;
+        private SiteListService mSiteListService;
 
         private int mScreenWidth = -1;
         private int mScreenHeight = -1;
@@ -225,6 +229,7 @@ public class SOWatchFace extends CanvasWatchFaceService {
 
             mCalendar = Calendar.getInstance();
             mLogoService = new LogoDownloadService(context);
+            mSiteListService = new SiteListService(context);
 
             initializeLogoDownload();
             loadSavedPreferences();
@@ -259,9 +264,13 @@ public class SOWatchFace extends CanvasWatchFaceService {
             String userIdPreferenceResourceName =
                     getApplicationContext().getString(R.string.saved_user_id_pref);
 
+            String seUserIdPreferenceResourceName =
+                    getApplicationContext().getString(R.string.saved_se_user_id_pref);
+
             boolean oldDesignPreference = mDesignPreference;
             String oldSiteName = mSiteName;
             int oldUserId = mUserId;
+            int oldSEUserId = mSEUserId;
 
             mUnreadNotificationsPreference =
                     mSharedPref.getBoolean(unreadNotificationPreferenceResourceName, true);
@@ -275,9 +284,12 @@ public class SOWatchFace extends CanvasWatchFaceService {
             mUserId =
                     mSharedPref.getInt(userIdPreferenceResourceName, JON_SKEET_ID);
 
+            mSEUserId =
+                    mSharedPref.getInt(seUserIdPreferenceResourceName, JON_SKEET_SE_ID);
+
             mSiteName = mLogoService.getCurrentSiteCodeName();
 
-            if (mUserId != oldUserId) {
+            if (mUserId != oldUserId || mSEUserId != oldSEUserId) {
                 setActiveComplications();
                 setActiveComplications(COMPLICATION_IDS);
             }
@@ -384,7 +396,7 @@ public class SOWatchFace extends CanvasWatchFaceService {
                     font.setTextAlign(Paint.Align.LEFT);
                     font.setTextSize(24);
 
-                    String shortName = mLogoService.getSiteData(mLogoService.getCurrentSiteCodeName(), mLogoService.SITE_SHORT_NAME_KEY);
+                    String shortName = mSiteListService.getShortName(mLogoService.getCurrentSiteCodeName());
                     canvas.drawText(shortName, 167, 123, font);
                 } else {
                     // for the simple watch we just draw the logo dimmed

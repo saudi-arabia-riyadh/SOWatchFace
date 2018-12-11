@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 
 import hu.sztupy.sowatchface.R;
+import hu.sztupy.sowatchface.utils.SiteListService;
 
 import static android.text.Html.FROM_HTML_MODE_COMPACT;
 
@@ -46,39 +47,11 @@ public class SiteSelectorActivity extends Activity {
            sharedPrefString = getApplicationContext().getResources().getString(sharedPrefId);
         }
 
-        ArrayList<SiteSelectorRecyclerViewAdapter.SiteConfigItem> dataSet = new ArrayList<>();
-
-        try {
-            InputStream sitesStream = getResources().openRawResource(R.raw.sites);
-            byte[] b = new byte[sitesStream.available()];
-            sitesStream.read(b);
-
-            JSONObject jsonObject = new JSONObject(new String(b, "UTF-8"));
-
-            JSONArray array = jsonObject.getJSONArray("items");
-
-            for (int i = 0; i < array.length(); i++) {
-                JSONObject item = array.getJSONObject(i);
-
-                String code = item.getString("api_site_parameter");
-                String name = Html.fromHtml(item.getString("name"), FROM_HTML_MODE_COMPACT).toString();
-
-                dataSet.add(new SiteSelectorRecyclerViewAdapter.SiteConfigItem(code, name));
-            }
-        } catch (Exception e) {
-
-        }
-
-        dataSet.sort(new Comparator<SiteSelectorRecyclerViewAdapter.SiteConfigItem>() {
-            @Override
-            public int compare(SiteSelectorRecyclerViewAdapter.SiteConfigItem o1, SiteSelectorRecyclerViewAdapter.SiteConfigItem o2) {
-                return o1.getName().compareTo(o2.getName());
-            }
-        });
+        SiteListService siteListService = new SiteListService(getApplicationContext());
 
         mSiteSelectorRecyclerViewAdapter = new SiteSelectorRecyclerViewAdapter(
                 sharedPrefString,
-                dataSet);
+                siteListService.getSiteList());
 
         mConfigAppearanceWearableRecyclerView =
                 (WearableRecyclerView) findViewById(R.id.wearable_recycler_view);

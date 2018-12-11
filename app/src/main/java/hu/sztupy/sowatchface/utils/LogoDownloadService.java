@@ -32,8 +32,6 @@ public class LogoDownloadService {
     public static final String COMPLICATION_PROVIDER_PREFERENCES_FILE_KEY =
             "hu.sztupy.sowatchface.watchface.COMPLICATION_PROVIDER_PREFERENCES_FILE_KEY";
 
-    public static final String SITE_NAME_KEY = "FULL_NAME";
-    public static final String SITE_SHORT_NAME_KEY = "SHORT_NAME";
     public static final String SITE_DOWNLOADED_KEY = "DOWNLOADED";
 
     private final Context context;
@@ -62,12 +60,6 @@ public class LogoDownloadService {
                     public void onResponse(JSONObject response) {
                         try {
                             final String iconUrl = response.getJSONArray("items").getJSONObject(0).getJSONObject("site").getString("high_resolution_icon_url");
-                            final String siteFullName = response.getJSONArray("items").getJSONObject(0).getJSONObject("site").getString("name");
-                            StringBuilder initials = new StringBuilder();
-                            for (String s : siteFullName.split("[ .]")) {
-                                initials.append(s.charAt(0));
-                            }
-                            final String siteNameShort = initials.toString();
                             Log.d(TAG, "Response is: " + iconUrl);
 
                             InputStreamVolleyRequest logoDownloadRequest = new InputStreamVolleyRequest(
@@ -96,9 +88,6 @@ public class LogoDownloadService {
 
                                                     SharedPreferences preferences = getComplicationPreferences();
                                                     SharedPreferences.Editor edit = preferences.edit();
-
-                                                    edit.putString(getSiteDataKey(site, SITE_NAME_KEY), siteFullName);
-                                                    edit.putString(getSiteDataKey(site, SITE_SHORT_NAME_KEY), siteNameShort);
                                                     edit.putBoolean(getSiteDataKey(site, SITE_DOWNLOADED_KEY), true);
                                                     edit.apply();
                                                 } catch (IOException error) {

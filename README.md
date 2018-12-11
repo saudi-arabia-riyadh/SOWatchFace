@@ -27,6 +27,21 @@ for fun and is NOT owned by, operated by, endorsed by, or in any way part of Sta
 - Displays the UTC offset so you know when the Stack Overflow counters reset.
 - Water Resistant to 6-8 weeks
 
+## Usage
+
+- Select the "SO Watch Face" in the watch face list to select it. Press the small cog to open up the settings.
+- Options available:
+
+  - Complications: You can set the left and right complication
+  - Unread Notifications: You can set whether you would like to see the unread notification dot or not
+  - Display UTC Notch: You can enable/disable displaying when UTC midnight is on the watch face
+  - SWAG Watch Face: You can switch between the simpler display featuring a larger logo, or the more complex one that loogs like the SWAG you could win
+  - SE Site: Allows you to change which Stack Exchange site you wish to look at
+  - SE ID: Allows you to set which Stack Exchange Network User ID you wish the reputation complication to use. Pleae note: you have to set the site-wide network ID here, not the site specific ID.
+  - Site ID: This will show you the ID the reputation complications will use. This is a read-only field.
+
+- Also has two complications you can use in any watch face. They can be configured in the watch face configuration
+
 ## Potential improvements
 
 - The list of Stack Exchange sites used is static and is from 12/12/2018. Any change

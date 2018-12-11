@@ -11,19 +11,21 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import hu.sztupy.sowatchface.R;
+import hu.sztupy.sowatchface.utils.SiteListService;
 
 public class SiteSelectorRecyclerViewAdapter extends
         RecyclerView.Adapter<RecyclerView.ViewHolder> {
     private static final String TAG = SiteSelectorRecyclerViewAdapter.class.getSimpleName();
 
-    private ArrayList<SiteConfigItem> mSiteList;
+    private List<SiteListService.SiteConfigItem> mSiteList;
     private String mSharedPrefString;
 
     public SiteSelectorRecyclerViewAdapter(
             String sharedPrefString,
-            ArrayList<SiteConfigItem> siteList) {
+            List<SiteListService.SiteConfigItem> siteList) {
 
         mSharedPrefString = sharedPrefString;
         mSiteList = siteList;
@@ -39,7 +41,7 @@ public class SiteSelectorRecyclerViewAdapter extends
 
     @Override
     public void onBindViewHolder(RecyclerView.ViewHolder viewHolder, int position) {
-        SiteConfigItem site = mSiteList.get(position);
+        SiteListService.SiteConfigItem site = mSiteList.get(position);
         SiteConfigViewHolder siteConfigViewHolder = (SiteConfigViewHolder) viewHolder;
         siteConfigViewHolder.setName(site.getName());
     }
@@ -47,32 +49,6 @@ public class SiteSelectorRecyclerViewAdapter extends
     @Override
     public int getItemCount() {
         return mSiteList.size();
-    }
-
-    static public class SiteConfigItem {
-        private final String code;
-        private final String name;
-
-        public SiteConfigItem(String code, String name) {
-            this.code = code;
-            this.name = name;
-        }
-
-        public String getCode() {
-            return code;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        @Override
-        public String toString() {
-            return "SiteConfigItem{" +
-                    "code='" + code + '\'' +
-                    ", name='" + name + '\'' +
-                    '}';
-        }
     }
 
     /**
@@ -97,7 +73,7 @@ public class SiteSelectorRecyclerViewAdapter extends
         @Override
         public void onClick (View view) {
             int position = getAdapterPosition();
-            SiteConfigItem site = mSiteList.get(position);
+            SiteListService.SiteConfigItem site = mSiteList.get(position);
 
             Log.d(TAG, "Site: " + site + " onClick() position: " + position);
 

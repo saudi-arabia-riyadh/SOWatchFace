@@ -30,7 +30,7 @@ import hu.sztupy.sowatchface.model.AnalogComplicationConfigData.ConfigItemType;
 import hu.sztupy.sowatchface.model.AnalogComplicationConfigData.PreviewAndComplicationsConfigItem;
 import hu.sztupy.sowatchface.model.AnalogComplicationConfigData.SwitchConfigItem;
 import hu.sztupy.sowatchface.model.AnalogComplicationConfigData.InputConfigItem;
-import hu.sztupy.sowatchface.model.AnalogComplicationConfigData.SelectBoxConfigItem;
+import hu.sztupy.sowatchface.model.AnalogComplicationConfigData.ValueDisplayConfigItem;
 import hu.sztupy.sowatchface.watchface.SOWatchFace;
 
 import java.util.ArrayList;
@@ -63,6 +63,7 @@ public class AnalogComplicationConfigRecyclerViewAdapter
     private static final String TAG = "CompConfigAdapter";
 
     public static final int JON_SKEET_ID = 22656;
+    public static final int JON_SKEET_SE_ID = 11683;
     public static final String STACKOVERFLOW_NAME = "stackoverflow";
 
     /**
@@ -81,16 +82,14 @@ public class AnalogComplicationConfigRecyclerViewAdapter
     public static final int TYPE_PREVIEW_AND_COMPLICATIONS_CONFIG = 0;
     public static final int TYPE_SWITCH_CONFIG = 1;
     public static final int TYPE_INPUT_CONFIG = 2;
-    public static final int TYPE_SELECTBOX_CONFIG = 3;
-
-    static final int UPDATE_SITE_SETTINGS_CODE = 1002;
+    public static final int TYPE_VALUE_CONFIG = 3;
 
     // ComponentName associated with watch face service (service that renders watch face). Used
     // to retrieve complication information.
     private ComponentName mWatchFaceComponentName;
 
     private ArrayList<ConfigItemType> mSettingsDataSet;
-    private ArrayList<SelectBoxViewHolder> mSelectBoxViewHolders;
+    private ArrayList<ValueDisplayViewHolder> mValueDisplayViewHolders;
 
     private Context mContext;
 
@@ -131,7 +130,7 @@ public class AnalogComplicationConfigRecyclerViewAdapter
                         context.getString(R.string.analog_complication_preference_file_key),
                         Context.MODE_PRIVATE);
 
-        mSelectBoxViewHolders = new ArrayList<>();
+        mValueDisplayViewHolders = new ArrayList<>();
 
         // Initialization of code to retrieve active complication data for the watch face.
         mProviderInfoRetriever =
@@ -178,12 +177,12 @@ public class AnalogComplicationConfigRecyclerViewAdapter
                                                 parent,
                                                 false));
                 break;
-            case TYPE_SELECTBOX_CONFIG:
+            case TYPE_VALUE_CONFIG:
                 viewHolder =
-                        new SelectBoxViewHolder(
+                        new ValueDisplayViewHolder(
                                 LayoutInflater.from(parent.getContext())
                                         .inflate(
-                                                R.layout.config_selectbox,
+                                                R.layout.config_value_display,
                                                 parent,
                                                 false));
                 break;
@@ -249,23 +248,24 @@ public class AnalogComplicationConfigRecyclerViewAdapter
                 inputViewHolder.setIcon(iconId);
                 inputViewHolder.setSharedPrefId(inputSharedPrefId);
                 break;
-            case TYPE_SELECTBOX_CONFIG:
-                SelectBoxViewHolder selectBoxViewHolder =
-                        (SelectBoxViewHolder) viewHolder;
+            case TYPE_VALUE_CONFIG:
+                ValueDisplayViewHolder valueDisplayViewHolder =
+                        (ValueDisplayViewHolder) viewHolder;
 
-                SelectBoxConfigItem selectBoxConfigItem =
-                        (SelectBoxConfigItem) configItemType;
+                ValueDisplayConfigItem valueDisplayConfigItem =
+                        (ValueDisplayConfigItem) configItemType;
 
-                int sbIconId = selectBoxConfigItem.getIconResourceId();
-                int selectBoxSharedPrefId = selectBoxConfigItem.getSharedPrefId();
-                String selectBoxName = selectBoxConfigItem.getName();
+                int sbIconId = valueDisplayConfigItem.getIconResourceId();
+                int selectBoxSharedPrefId = valueDisplayConfigItem.getSharedPrefId();
+                String selectBoxName = valueDisplayConfigItem.getName();
+                Class<SiteSelectorActivity> launchActivity = valueDisplayConfigItem.getLaunchActivity();
 
-                selectBoxViewHolder.setName(selectBoxName);
-                selectBoxViewHolder.setIcon(sbIconId);
-                selectBoxViewHolder.setSharedPrefId(selectBoxSharedPrefId);
-                selectBoxViewHolder.setLaunchActivity(SiteSelectorActivity.class);
+                valueDisplayViewHolder.setName(selectBoxName);
+                valueDisplayViewHolder.setIcon(sbIconId);
+                valueDisplayViewHolder.setSharedPrefId(selectBoxSharedPrefId);
+                valueDisplayViewHolder.setLaunchActivity(launchActivity);
 
-                mSelectBoxViewHolders.add(selectBoxViewHolder);
+                mValueDisplayViewHolders.add(valueDisplayViewHolder);
                 break;
         }
     }
@@ -294,7 +294,7 @@ public class AnalogComplicationConfigRecyclerViewAdapter
     }
 
     public void updateSiteName() {
-        for (SelectBoxViewHolder viewHolder : mSelectBoxViewHolders) {
+        for (ValueDisplayViewHolder viewHolder : mValueDisplayViewHolders) {
             viewHolder.updatePreference();
         }
     }
@@ -579,7 +579,7 @@ public class AnalogComplicationConfigRecyclerViewAdapter
 
                 Context context = mInput.getContext();
                 String sharedPreferenceString = context.getString(mSharedPrefResourceId);
-                int currentValue = mSharedPref.getInt(sharedPreferenceString, JON_SKEET_ID);
+                int currentValue = mSharedPref.getInt(sharedPreferenceString, JON_SKEET_SE_ID);
 
                 mInput.setText(currentValue + "");
             }
@@ -605,7 +605,7 @@ public class AnalogComplicationConfigRecyclerViewAdapter
                 try {
                     newValue = Integer.parseInt(s.toString());
                 } catch (NumberFormatException e) {
-                    newValue = JON_SKEET_ID;
+                    newValue = JON_SKEET_SE_ID;
                 }
 
                 SharedPreferences.Editor editor = mSharedPref.edit();
@@ -626,7 +626,7 @@ public class AnalogComplicationConfigRecyclerViewAdapter
     /**
      * Displays switch with icon the user can toggle on and off.
      */
-    public class SelectBoxViewHolder extends RecyclerView.ViewHolder implements OnClickListener {
+    public class ValueDisplayViewHolder extends RecyclerView.ViewHolder implements OnClickListener {
 
         private TextView mValue;
         private TextView mLabel;
@@ -639,7 +639,7 @@ public class AnalogComplicationConfigRecyclerViewAdapter
         private Class<SiteSelectorActivity> mLaunchActivity;
 
 
-        public SelectBoxViewHolder(View view) {
+        public ValueDisplayViewHolder(View view) {
             super(view);
             mView = view;
 
@@ -681,9 +681,13 @@ public class AnalogComplicationConfigRecyclerViewAdapter
 
                 Context context = mValue.getContext();
                 String sharedPreferenceString = context.getString(mSharedPrefResourceId);
-                String currentValue = mSharedPref.getString(sharedPreferenceString, STACKOVERFLOW_NAME);
 
-                mValue.setText(currentValue);
+                Object currentValue = mSharedPref.getAll().get(sharedPreferenceString);
+                if (currentValue == null) {
+                    currentValue = "";
+                }
+
+                mValue.setText(currentValue.toString());
             }
         }
 

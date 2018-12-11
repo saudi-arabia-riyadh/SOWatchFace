@@ -7,6 +7,7 @@ import android.support.v7.widget.RecyclerView;
 import hu.sztupy.sowatchface.R;
 import hu.sztupy.sowatchface.config.AnalogComplicationConfigRecyclerViewAdapter;
 import hu.sztupy.sowatchface.config.AnalogComplicationConfigActivity;
+import hu.sztupy.sowatchface.config.SiteSelectorActivity;
 import hu.sztupy.sowatchface.watchface.SOWatchFace;
 
 import java.util.ArrayList;
@@ -73,17 +74,26 @@ public class AnalogComplicationConfigData {
         settingsConfigData.add(designPreferenceConfigItem);
 
         ConfigItemType siteNameConfigItem =
-                new SelectBoxConfigItem(
+                new ValueDisplayConfigItem(
                         context.getString(R.string.config_se_site_label),
                         R.drawable.baseline_subject_white_24,
-                        R.string.saved_site_name_pref);
+                        R.string.saved_site_name_pref,
+                        SiteSelectorActivity.class);
         settingsConfigData.add(siteNameConfigItem);
 
-        ConfigItemType userIdSelectConfigItem =
+        ConfigItemType seUserIdSelectConfigItem =
                 new InputConfigItem(
+                        context.getString(R.string.config_se_user_id_label),
+                        R.drawable.baseline_trending_up_white_24,
+                        R.string.saved_se_user_id_pref);
+        settingsConfigData.add(seUserIdSelectConfigItem);
+
+        ConfigItemType userIdSelectConfigItem =
+                new ValueDisplayConfigItem(
                         context.getString(R.string.config_user_id_label),
                         R.drawable.baseline_trending_up_white_24,
-                        R.string.saved_user_id_pref);
+                        R.string.saved_user_id_pref,
+                        null);
         settingsConfigData.add(userIdSelectConfigItem);
 
         return settingsConfigData;
@@ -186,19 +196,21 @@ public class AnalogComplicationConfigData {
         }
     }
 
-    public static class SelectBoxConfigItem implements ConfigItemType {
+    public static class ValueDisplayConfigItem implements ConfigItemType {
 
         private String name;
         private int iconResourceId;
         private int sharedPrefId;
+        private Class<SiteSelectorActivity> mLaunchActivity;
 
-        SelectBoxConfigItem(
+        ValueDisplayConfigItem(
                 String name,
                 int iconResourceId,
-                int sharedPrefId) {
+                int sharedPrefId, Class<SiteSelectorActivity> launchActivity) {
             this.name = name;
             this.iconResourceId = iconResourceId;
             this.sharedPrefId = sharedPrefId;
+            this.mLaunchActivity = launchActivity;
         }
 
         public String getName() {
@@ -213,9 +225,13 @@ public class AnalogComplicationConfigData {
             return sharedPrefId;
         }
 
+        public Class<SiteSelectorActivity> getLaunchActivity() {
+            return mLaunchActivity;
+        }
+
         @Override
         public int getConfigType() {
-            return AnalogComplicationConfigRecyclerViewAdapter.TYPE_SELECTBOX_CONFIG;
+            return AnalogComplicationConfigRecyclerViewAdapter.TYPE_VALUE_CONFIG;
         }
     }
 }

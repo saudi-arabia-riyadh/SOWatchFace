@@ -20,6 +20,7 @@ import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -28,6 +29,7 @@ import java.util.Locale;
 import hu.sztupy.sowatchface.R;
 import hu.sztupy.sowatchface.config.AnalogComplicationConfigRecyclerViewAdapter;
 import hu.sztupy.sowatchface.utils.LogoDownloadService;
+import hu.sztupy.sowatchface.utils.SiteListService;
 
 /**
  * Example Watch Face Complication data provider provides a number that can be incremented on tap.
@@ -168,9 +170,73 @@ public class StackOverflowReputationProviderService extends ComplicationProvider
         logoService.downloadSiteIcon(logoService.getCurrentSiteCodeName(), new Runnable() {
             @Override
             public void run() {
-                getLatestData(getApplicationContext(), complicationId, updateComplications);
+                getStackExchangeUserId(getApplicationContext(), complicationId, 1, new Runnable() {
+                    @Override
+                    public void run() {
+                        getLatestData(getApplicationContext(), complicationId, updateComplications);
+                    }
+                });
             }
         });
+    }
+
+    // Updates the stored site specific user ID based on the SE user id - if present
+    public void getStackExchangeUserId(final Context context, final int complicationId, final int page, final Runnable callback) {
+        final SharedPreferences applicationPreferences =
+                context.getSharedPreferences(
+                        context.getString(R.string.analog_complication_preference_file_key),
+                        Context.MODE_PRIVATE);
+
+        final LogoDownloadService logoService = new LogoDownloadService(context);
+        final SiteListService siteListService = new SiteListService(context);
+
+        final int seUserId = applicationPreferences.getInt(context.getString(R.string.saved_se_user_id_pref), AnalogComplicationConfigRecyclerViewAdapter.JON_SKEET_SE_ID);
+        final String siteUrl = siteListService.getUrl(logoService.getCurrentSiteCodeName());
+
+        RequestQueue queue = Volley.newRequestQueue(context);
+        String url = "https://api.stackexchange.com/2.2/users/"+ seUserId +"/associated?page="+ page +"&pagesize=100&filter=!-rYuN5D9&key=" + SO_ACCESS_KEY;
+
+        JsonObjectRequest jsonRequest = new JsonObjectRequest(Request.Method.GET, url,
+                null,
+                new Response.Listener<JSONObject>() {
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        boolean hasMore = false;
+
+                        try {
+                            hasMore = response.getBoolean("has_more");
+                            JSONArray items = response.getJSONArray("items");
+                            for (int i = 0; i < items.length(); i++) {
+                                String name = items.getJSONObject(i).getString("site_url");
+                                if (name.equals(siteUrl)) {
+                                    int siteUserId = items.getJSONObject(i).getInt("user_id");
+                                    Log.d(TAG, "Found user: " + siteUserId);
+                                    hasMore = false;
+                                    SharedPreferences.Editor edit = applicationPreferences.edit();
+
+                                    edit.putInt(context.getString(R.string.saved_user_id_pref), siteUserId);
+                                    edit.apply();
+                                }
+                            }
+                        } catch (JSONException e) {
+                        }
+
+                        if (hasMore) {
+                            getStackExchangeUserId(context, complicationId, page + 1, callback);
+                        } else {
+                            callback.run();
+                        }
+                    }
+                }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                Log.i(TAG, "Access to StackOverflow API has failed", error);
+                Log.i(TAG, error.toString());
+                callback.run();
+            }
+        });
+
+        queue.add(jsonRequest);
     }
 
     public void getLatestData(final Context context, final int complicationId, final Runnable callback) {
@@ -183,7 +249,7 @@ public class StackOverflowReputationProviderService extends ComplicationProvider
         String siteName = applicationPreferences.getString(context.getString(R.string.saved_site_name_pref), AnalogComplicationConfigRecyclerViewAdapter.STACKOVERFLOW_NAME);
 
         RequestQueue queue = Volley.newRequestQueue(context);
-        String url = "https://api.stackexchange.com/2.2/users/" + userId + "?site=" + siteName + "&key=" + SO_ACCESS_KEY;
+        String url = "https://api.stackexchange.com/2.2/users/" + userId + "?site=" + siteName + "&filter=!-.x-q-ibvTqe&key=" + SO_ACCESS_KEY;
 
         JsonObjectRequest jsonRequest = new JsonObjectRequest(Request.Method.GET, url,
                 null,

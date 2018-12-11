@@ -36,6 +36,7 @@ import hu.sztupy.sowatchface.R;
 import hu.sztupy.sowatchface.config.AnalogComplicationConfigRecyclerViewAdapter;
 import hu.sztupy.sowatchface.utils.InputStreamVolleyRequest;
 import hu.sztupy.sowatchface.utils.LogoDownloadService;
+import hu.sztupy.sowatchface.utils.SiteListService;
 
 import static android.support.wearable.complications.ComplicationData.IMAGE_STYLE_ICON;
 
@@ -62,6 +63,7 @@ public class StackOverflowLogoProviderService extends ComplicationProviderServic
                 ComplicationUpdateReceiver.getToggleIntent(this, thisProvider, complicationId);
 
         final LogoDownloadService logoService = new LogoDownloadService(getApplicationContext());
+        final SiteListService siteListService = new SiteListService(getApplicationContext());
 
         Runnable updateComplications = new Runnable() {
             @Override
@@ -77,8 +79,8 @@ public class StackOverflowLogoProviderService extends ComplicationProviderServic
                     icon = Icon.createWithBitmap(LogoDownloadService.resizeLogo(bmp, 64, 64));
                 }
 
-                String shortName = logoService.getSiteData(logoService.getCurrentSiteCodeName(), logoService.SITE_SHORT_NAME_KEY);
-                String longName = logoService.getSiteData(logoService.getCurrentSiteCodeName(), logoService.SITE_NAME_KEY);
+                String shortName = siteListService.getShortName(logoService.getCurrentSiteCodeName());
+                String longName = siteListService.getName(logoService.getCurrentSiteCodeName());
 
                 switch (dataType) {
                     case ComplicationData.TYPE_SHORT_TEXT:
