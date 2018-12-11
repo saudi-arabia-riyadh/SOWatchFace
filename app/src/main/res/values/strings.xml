@@ -23,16 +23,18 @@
     <string name="saved_utc_notch_pref">saved_utc_notch</string>
     <string name="saved_design_pref">saved_design</string>
     <string name="saved_user_id_pref">saved_user_id</string>
+    <string name="saved_site_name_pref">saved_site_name</string>
 
     <!-- Use of "\n" is to conserve horizontal space in config menu. -->
-    <string name="config_unread_notifications_label">Unread\nNotifications</string>
+    <string name="config_unread_notifications_label">Show Unread\nNotifications</string>
     <string name="config_utc_display_label">Display\nUTC Notch</string>
     <string name="config_design_label">SWAG\nWatch Face</string>
-    <string name="config_user_id_label">StackOverflow\nUser ID:</string>
+    <string name="config_user_id_label">Site\nUser ID:</string>
 
-    <string name="analog_complication_config">Configure Watchface Complications</string>
+    <string name="analog_complication_config">Configure Watch Face Complications</string>
     <string name="add_complication">Add Complication</string>
     <string name="edit_complication">Edit Complication <xliff:g id="name" example="World Clock">%1$s</xliff:g></string>
 
-    <string name="reputation_provider_name">Stack Overflow Reputation</string>
+    <string name="reputation_provider_name">Site Reputation</string>
+    <string name="logo_provider_name">Site Logo</string>
 </resources>

@@ -23,11 +23,10 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.wearable.complications.ProviderUpdateRequester;
 /**
- * Simple {@link BroadcastReceiver} subclass for asynchronously incrementing an integer for any
- * complication id triggered via TapAction on complication. Also, provides static method to create a
- * {@link PendingIntent} that triggers this receiver.
+ * Simple {@link BroadcastReceiver} subclass for forcing an update of the complication providers through
+ * a tap action from the {@link PendingIntent} that triggers this receiver.
  */
-public class StackOverflowReputationDataReceiver extends BroadcastReceiver {
+public class ComplicationUpdateReceiver extends BroadcastReceiver {
     private static final String EXTRA_PROVIDER_COMPONENT =
             "hu.sztupy.sowatchface.provider.action.PROVIDER_COMPONENT";
     private static final String EXTRA_COMPLICATION_ID =
@@ -49,7 +48,7 @@ public class StackOverflowReputationDataReceiver extends BroadcastReceiver {
      */
     static PendingIntent getToggleIntent(
             Context context, ComponentName provider, int complicationId) {
-        Intent intent = new Intent(context, StackOverflowReputationDataReceiver.class);
+        Intent intent = new Intent(context, ComplicationUpdateReceiver.class);
         intent.putExtra(EXTRA_PROVIDER_COMPONENT, provider);
         intent.putExtra(EXTRA_COMPLICATION_ID, complicationId);
 

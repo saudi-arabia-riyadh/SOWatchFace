@@ -75,6 +75,7 @@ public class AnalogComplicationConfigRecyclerViewAdapter
     private static final String TAG = "CompConfigAdapter";
 
     public static final int JON_SKEET_ID = 22656;
+    public static final String STACKOVERFLOW_NAME = "stackoverflow";
 
     /**
      * Used by associated watch face ({@link SOWatchFace}) to let this

@@ -11,8 +11,11 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.ColorMatrix;
 import android.graphics.ColorMatrixColorFilter;
+import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Rect;
+import android.graphics.Typeface;
+import android.graphics.drawable.Icon;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -33,6 +36,7 @@ import java.util.concurrent.TimeUnit;
 
 import hu.sztupy.sowatchface.R;
 import hu.sztupy.sowatchface.config.AnalogComplicationConfigRecyclerViewAdapter;
+import hu.sztupy.sowatchface.utils.LogoDownloadService;
 
 /**
  * Analog watch face with a ticking second hand. In ambient mode, the second hand isn't
@@ -162,10 +166,8 @@ public class SOWatchFace extends CanvasWatchFaceService {
         private Paint mBackgroundPaint;
         private Paint mForeGroundPaint;
 
-        private Bitmap mBackground1Bitmap;
-        private Bitmap mGrayBackground1Bitmap;
-        private Bitmap mBackground2Bitmap;
-        private Bitmap mGrayBackground2Bitmap;
+        private Bitmap mBackgroundBitmap;
+        private Bitmap mGrayBackgroundBitmap;
         private Bitmap mMainTickBitmap;
         private Bitmap mGrayMainTickBitmap;
         private Bitmap mHourBitmap;
@@ -198,6 +200,11 @@ public class SOWatchFace extends CanvasWatchFaceService {
         private boolean mLowBitAmbient;
         private boolean mBurnInProtection;
 
+        private LogoDownloadService mLogoService;
+
+        private int mScreenWidth = -1;
+        private int mScreenHeight = -1;
+
         @Override
         public void onCreate(SurfaceHolder holder) {
             super.onCreate(holder);
@@ -215,10 +222,24 @@ public class SOWatchFace extends CanvasWatchFaceService {
                             Context.MODE_PRIVATE);
 
             mCalendar = Calendar.getInstance();
+            mLogoService = new LogoDownloadService(context);
 
+            initializeLogoDownload();
             loadSavedPreferences();
             initializeComplications();
             initializeBackground();
+        }
+
+        private void initializeLogoDownload() {
+            if (!mLogoService.logoExists(mLogoService.getCurrentSiteCodeName())) {
+                Runnable reloadBackgrounds = new Runnable() {
+                    @Override
+                    public void run() {
+                        regenerateScreenData();
+                    }
+                };
+                mLogoService.downloadSiteIcon(mLogoService.getCurrentSiteCodeName(), reloadBackgrounds);
+            }
         }
 
         // Pulls all user's preferences for watch face appearance.
@@ -239,8 +260,14 @@ public class SOWatchFace extends CanvasWatchFaceService {
             mUTCNotchPreference =
                     mSharedPref.getBoolean(utcNotchPreferenceResourceName, true);
 
+            boolean mOldPreference = mDesignPreference;
+
             mDesignPreference =
                     mSharedPref.getBoolean(designPreferenceResourceName, true);
+
+            if (mOldPreference != mDesignPreference) {
+                regenerateScreenData();
+            }
         }
 
         private void initializeComplications() {
@@ -298,12 +325,52 @@ public class SOWatchFace extends CanvasWatchFaceService {
             mForeGroundPaint = new Paint();
             mForeGroundPaint.setColor(GRAY);
 
-            mBackground1Bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.bg_1);
-            mBackground2Bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.bg_2);
+            if (mDesignPreference) {
+                mBackgroundBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.bg_2);
+            } else {
+                mBackgroundBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.bg_1);
+            }
+
             mMainTickBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.main_tick);
             mHourBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.hour);
             mMinuteBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.minute);
             mSecondBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.second);
+
+            addIconsToBackground();
+        }
+
+        private void addIconsToBackground() {
+            if (mLogoService.logoExists(mLogoService.getCurrentSiteCodeName())){
+                Bitmap icon = BitmapFactory.decodeFile(mLogoService.getIconFile(mLogoService.getCurrentSiteCodeName()).getAbsolutePath());
+
+                mBackgroundBitmap = mBackgroundBitmap.copy(Bitmap.Config.ARGB_8888, true);
+
+                if (mDesignPreference) {
+                    // for the SWAG watch we draw a small logo, and the title text nearby
+                    Bitmap smallLogo = LogoDownloadService.resizeLogo(icon, 36, 36);
+
+                    Canvas canvas = new Canvas(mBackgroundBitmap);
+                    canvas.drawBitmap(smallLogo, 144 - smallLogo.getWidth() / 2, 113 - smallLogo.getHeight() / 2, null);
+
+                    Paint font = new Paint();
+                    font.setTypeface(Typeface.create(Typeface.SERIF, Typeface.BOLD));
+                    font.setColor(ORANGE);
+                    font.setTextAlign(Paint.Align.LEFT);
+                    font.setTextSize(24);
+
+                    String shortName = mLogoService.getSiteData(mLogoService.getCurrentSiteCodeName(), mLogoService.SITE_SHORT_NAME_KEY);
+                    canvas.drawText(shortName, 167, 123, font);
+                } else {
+                    // for the simple watch we just draw the logo dimmed
+                    Paint alphaPaint = new Paint();
+                    alphaPaint.setAlpha(96);
+
+                    Bitmap largeLogo = LogoDownloadService.resizeLogo(icon, 150, 150);
+                    Canvas canvas = new Canvas(mBackgroundBitmap);
+                    canvas.drawBitmap(largeLogo, 160 - largeLogo.getWidth() / 2, 160 - largeLogo.getHeight() / 2, alphaPaint);
+                }
+
+            }
         }
 
         @Override
@@ -372,23 +439,29 @@ public class SOWatchFace extends CanvasWatchFaceService {
         public void onSurfaceChanged(SurfaceHolder holder, int format, int width, int height) {
             super.onSurfaceChanged(holder, format, width, height);
 
-            /*
-             * Find the coordinates of the center point on the screen, and ignore the window
-             * insets, so that, on round watches with a "chin", the watch face is centered on the
-             * entire screen, not just the usable portion.
-             */
+            mScreenHeight = height;
+            mScreenWidth = width;
+
             mCenterX = width / 2f;
             mCenterY = height / 2f;
 
-            /* Scale loaded background image (more efficient) if surface dimensions change. */
-            float scale = ((float) width) / (float) mBackground1Bitmap.getWidth();
+            regenerateScreenData();
+        }
 
-            mBackground1Bitmap = Bitmap.createScaledBitmap(mBackground1Bitmap,
-                    (int) (mBackground1Bitmap.getWidth() * scale),
-                    (int) (mBackground1Bitmap.getHeight() * scale), true);
-            mBackground2Bitmap = Bitmap.createScaledBitmap(mBackground2Bitmap,
-                    (int) (mBackground2Bitmap.getWidth() * scale),
-                    (int) (mBackground2Bitmap.getHeight() * scale), true);
+        private void regenerateScreenData() {
+            Log.d(TAG, "Regenerating Screen Data");
+
+            initializeBackground();
+
+            if (mScreenWidth == -1 || mScreenHeight == -1)
+                return;
+
+            /* Scale loaded background image (more efficient) if surface dimensions change. */
+            float scale = ((float) mScreenWidth) / (float) mBackgroundBitmap.getWidth();
+
+            mBackgroundBitmap = Bitmap.createScaledBitmap(mBackgroundBitmap,
+                    (int) (mBackgroundBitmap.getWidth() * scale),
+                    (int) (mBackgroundBitmap.getHeight() * scale), true);
             mMainTickBitmap = Bitmap.createScaledBitmap(mMainTickBitmap,
                     (int) (mMainTickBitmap.getWidth() * scale),
                     (int) (mMainTickBitmap.getHeight() * scale), true);
@@ -415,8 +488,8 @@ public class SOWatchFace extends CanvasWatchFaceService {
                 initGrayBackgroundBitmap();
             }
 
-            int sizeOfComplication = width / 5;
-            int midpointOfScreen = width / 2;
+            int sizeOfComplication = mScreenWidth / 5;
+            int midpointOfScreen = mScreenWidth / 2;
 
             int horizontalOffset = (midpointOfScreen - sizeOfComplication) / 2;
             int verticalOffset = midpointOfScreen - (sizeOfComplication / 2);
@@ -447,13 +520,9 @@ public class SOWatchFace extends CanvasWatchFaceService {
         }
 
         private void initGrayBackgroundBitmap() {
-            mGrayBackground1Bitmap = Bitmap.createBitmap(
-                    mBackground1Bitmap.getWidth(),
-                    mBackground1Bitmap.getHeight(),
-                    Bitmap.Config.ARGB_8888);
-            mGrayBackground2Bitmap = Bitmap.createBitmap(
-                    mBackground2Bitmap.getWidth(),
-                    mBackground2Bitmap.getHeight(),
+            mGrayBackgroundBitmap = Bitmap.createBitmap(
+                    mBackgroundBitmap.getWidth(),
+                    mBackgroundBitmap.getHeight(),
                     Bitmap.Config.ARGB_8888);
             mGrayHourBitmap = Bitmap.createBitmap(
                     mHourBitmap.getWidth(),
@@ -474,10 +543,8 @@ public class SOWatchFace extends CanvasWatchFaceService {
             ColorMatrixColorFilter filter = new ColorMatrixColorFilter(colorMatrix);
             grayPaint.setColorFilter(filter);
 
-            Canvas canvas = new Canvas(mGrayBackground1Bitmap);
-            canvas.drawBitmap(mBackground1Bitmap, 0, 0, grayPaint);
-            canvas = new Canvas(mGrayBackground2Bitmap);
-            canvas.drawBitmap(mBackground2Bitmap, 0, 0, grayPaint);
+            Canvas canvas = new Canvas(mGrayBackgroundBitmap);
+            canvas.drawBitmap(mBackgroundBitmap, 0, 0, grayPaint);
             canvas = new Canvas(mGrayHourBitmap);
             canvas.drawBitmap(mHourBitmap, 0, 0, grayPaint);
             canvas = new Canvas(mGrayMainTickBitmap);
@@ -548,9 +615,9 @@ public class SOWatchFace extends CanvasWatchFaceService {
             if (mAmbient && (mBurnInProtection)) {
                 canvas.drawColor(Color.BLACK);
             } else if (mAmbient) {
-                canvas.drawBitmap(mDesignPreference ? mGrayBackground2Bitmap : mGrayBackground1Bitmap, 0, 0, mBackgroundPaint);
+                canvas.drawBitmap(mGrayBackgroundBitmap, 0, 0, mBackgroundPaint);
             } else {
-                canvas.drawBitmap(mDesignPreference ? mBackground2Bitmap : mBackground1Bitmap, 0, 0, mBackgroundPaint);
+                canvas.drawBitmap(mBackgroundBitmap, 0, 0, mBackgroundPaint);
             }
         }
 
@@ -590,11 +657,10 @@ public class SOWatchFace extends CanvasWatchFaceService {
              * These calculations reflect the rotation in degrees per unit of time, e.g.,
              * 360 / 60 = 6 and 360 / 12 = 30.
              */
-            final float seconds =
-                    (mCalendar.get(Calendar.SECOND) + mCalendar.get(Calendar.MILLISECOND) / 1000f);
+            final float seconds = mCalendar.get(Calendar.SECOND);
             final float secondsRotation = seconds * 6f;
 
-            final float minutesHandOffset = seconds / 12f;
+            final float minutesHandOffset = seconds / 10f;
             final float minutesRotation = mCalendar.get(Calendar.MINUTE) * 6f + minutesHandOffset;
 
             final float hourHandOffset = mCalendar.get(Calendar.MINUTE) / 2f;
