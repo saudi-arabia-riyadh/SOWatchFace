@@ -12,6 +12,7 @@ for fun and is NOT owned by, operated by, endorsed by, or in any way part of Sta
 - Play store link: https://play.google.com/store/apps/details?id=hu.sztupy.sowatchface
 - Releases: https://github.com/sztupy/SOWatchFace/releases
 - Demo video (v5.0): https://youtu.be/NVwtpdLeB2g
+- StackApps link: https://stackapps.com/q/8176/1265
 
 ## Features
 
